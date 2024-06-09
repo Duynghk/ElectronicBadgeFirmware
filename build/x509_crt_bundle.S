@@ -1,4 +1,4 @@
-/* * Data converted from E:/ThayLoc/DoAn/ElectronicBadge/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 .section .rodata.embedded

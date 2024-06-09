@@ -1,8 +1,8 @@
-# Install script for directory: E:/ThayLoc/DoAn/ElectronicBadge/components/libnmea-esp32
+# Install script for directory: E:/ThayLoc/DoAn/ElectronicBadgeFirmware/components/libnmea-esp32
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/ElectronicBadge")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/ElectronicBadgeFirmware")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

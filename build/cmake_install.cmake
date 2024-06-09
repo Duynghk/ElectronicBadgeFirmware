@@ -1,8 +1,8 @@
-# Install script for directory: E:/ThayLoc/DoAn/ElectronicBadge
+# Install script for directory: E:/ThayLoc/DoAn/ElectronicBadgeFirmware
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/ElectronicBadge")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/ElectronicBadgeFirmware")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("E:/ThayLoc/DoAn/ElectronicBadge/build/esp-idf/cmake_install.cmake")
+  include("E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "E:/ThayLoc/DoAn/ElectronicBadge/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

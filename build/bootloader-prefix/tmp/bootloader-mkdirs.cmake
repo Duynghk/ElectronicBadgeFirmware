@@ -5,18 +5,18 @@ cmake_minimum_required(VERSION 3.5)
 
 file(MAKE_DIRECTORY
   "C:/Users/TrinhLeHuy/esp/v5.1.3/esp-idf/components/bootloader/subproject"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/tmp"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/src/bootloader-stamp"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/src"
-  "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/src/bootloader-stamp"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/tmp"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/src/bootloader-stamp"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/src"
+  "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/src/bootloader-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
+    file(MAKE_DIRECTORY "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "E:/ThayLoc/DoAn/ElectronicBadge/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
 endif()
