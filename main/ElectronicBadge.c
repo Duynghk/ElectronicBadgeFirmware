@@ -46,14 +46,8 @@ typedef struct {
     char lon_cardinal;
 } Coordinate;
 
-SemaphoreHandle_t xMutex;
+SemaphoreHandle_t locatedSemaphore = NULL;
 
-void initMutex() {
-    xMutex = xSemaphoreCreateMutex();
-    if (xMutex == NULL) {
-        printf("Mutex creation failed!\n");
-    }
-}
 
 Coordinate coord;
 
@@ -72,9 +66,9 @@ void LC76F_read_line(char **out_line_buf, size_t *out_line_len, int timeout_ms);
 static void recieve_data_from_RAK(void *arg);
 int send_data_to_RAK(const char* logName, const char* data);
 
-static void read_and_parse_nmea()
+static void read_and_parse_nmea(void *pvParameters)
 {
-    printf("Task GPS is ran\n");
+    Coordinate *coord = (Coordinate *)pvParameters;
     while (1) {
         char fmt_buf[32];
         nmea_s *data;
@@ -83,6 +77,7 @@ static void read_and_parse_nmea()
         size_t length;
         LC76F_read_line(&start, &length, 100 /* ms */);
         if (length == 0) {
+            printf("Waiting for LC76F start\n");
             continue;
         }
 
@@ -92,123 +87,43 @@ static void read_and_parse_nmea()
             printf("Failed to parse the sentence!\n");
             printf("  Type: %.5s (%d)\n", start + 1, nmea_get_type(start));
         } else {
-            // if (data->errors != 0) {
-            //     printf("WARN: The sentence struct contains parse errors!\n");
-            // }
-
-            // if (NMEA_GPGGA == data->type) {
-            //     printf("GPGGA sentence\n");
-            //     nmea_gpgga_s *gpgga = (nmea_gpgga_s *) data;
-            //     printf("Number of satellites: %d\n", gpgga->n_satellites);
-            //     printf("Altitude: %f %c\n", gpgga->altitude,
-            //            gpgga->altitude_unit);
-            // }
-
-            if (NMEA_GPGLL == data->type) {
-                nmea_gpgll_s *pos = (nmea_gpgll_s *) data;
-                if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE) 
-                {
-                    if (pos->latitude.degrees != 0 && pos->latitude.minutes != 0 ) 
-                    {
-                        xSemaphoreGive(xMutex);
-                        // Truy cập và cập nhật dữ liệu tọa độ
-                        coord.lat_degrees = pos->latitude.degrees;
-                        coord.lat_minutes = pos->latitude.minutes;
-                        coord.lat_cardinal = pos->latitude.cardinal;
-                        coord.lon_degrees = pos->longitude.degrees;
-                        coord.lon_minutes = pos->longitude.minutes;
-                        coord.lon_cardinal = pos->longitude.cardinal;
-                        printf("Task 1: Updated coordinates\n");
-                    }  
-                }
-                // printf("GPGLL sentence\n");
-                
-                // printf("Longitude:\n");
-                // printf("  Degrees: %d\n", pos->longitude.degrees);
-                // printf("  Minutes: %f\n", pos->longitude.minutes);
-                // printf("  Cardinal: %c\n", (char) pos->longitude.cardinal);
-                // printf("Latitude:\n");
-                // printf("  Degrees: %d\n", pos->latitude.degrees);
-                // printf("  Minutes: %f\n", pos->latitude.minutes);
-                // printf("  Cardinal: %c\n", (char) pos->latitude.cardinal);
-                // strftime(fmt_buf, sizeof(fmt_buf), "%H:%M:%S", &pos->time);
-                // printf("Time: %s\n", fmt_buf);
+            if (data->errors != 0) {
+                printf("WARN: The sentence struct contains parse errors!\n");
             }
-
-            // if (NMEA_GPRMC == data->type) {
-            //     printf("GPRMC sentence\n");
-            //     nmea_gprmc_s *pos = (nmea_gprmc_s *) data;
-            //     printf("Longitude:\n");
-            //     printf("  Degrees: %d\n", pos->longitude.degrees);
-            //     printf("  Minutes: %f\n", pos->longitude.minutes);
-            //     printf("  Cardinal: %c\n", (char) pos->longitude.cardinal);
-            //     printf("Latitude:\n");
-            //     printf("  Degrees: %d\n", pos->latitude.degrees);
-            //     printf("  Minutes: %f\n", pos->latitude.minutes);
-            //     printf("  Cardinal: %c\n", (char) pos->latitude.cardinal);
-            //     strftime(fmt_buf, sizeof(fmt_buf), "%d %b %T %Y", &pos->date_time);
-            //     printf("Date & Time: %s\n", fmt_buf);
-            //     printf("Speed, in Knots: %f\n", pos->gndspd_knots);
-            //     printf("Track, in degrees: %f\n", pos->track_deg);
-            //     printf("Magnetic Variation:\n");
-            //     printf("  Degrees: %f\n", pos->magvar_deg);
-            //     printf("  Cardinal: %c\n", (char) pos->magvar_cardinal);
-            //     double adjusted_course = pos->track_deg;
-            //     if (NMEA_CARDINAL_DIR_EAST == pos->magvar_cardinal) {
-            //         adjusted_course -= pos->magvar_deg;
-            //     } else if (NMEA_CARDINAL_DIR_WEST == pos->magvar_cardinal) {
-            //         adjusted_course += pos->magvar_deg;
-            //     } else {
-            //         printf("Invalid Magnetic Variation Direction!\n");
-            //     }
-
-            //     printf("Adjusted Track (heading): %f\n", adjusted_course);
-            // }
-
-            // if (NMEA_GPGSA == data->type) {
-            //     nmea_gpgsa_s *gpgsa = (nmea_gpgsa_s *) data;
-
-            //     printf("GPGSA Sentence:\n");
-            //     printf("  Mode: %c\n", gpgsa->mode);
-            //     printf("  Fix:  %d\n", gpgsa->fixtype);
-            //     printf("  PDOP: %.2lf\n", gpgsa->pdop);
-            //     printf("  HDOP: %.2lf\n", gpgsa->hdop);
-            //     printf("  VDOP: %.2lf\n", gpgsa->vdop);
-            // }
-
-            // if (NMEA_GPGSV == data->type) {
-            //     nmea_gpgsv_s *gpgsv = (nmea_gpgsv_s *) data;
-
-            //     printf("GPGSV Sentence:\n");
-            //     printf("  Num: %d\n", gpgsv->sentences);
-            //     printf("  ID:  %d\n", gpgsv->sentence_number);
-            //     printf("  SV:  %d\n", gpgsv->satellites);
-            //     printf("  #1:  %d %d %d %d\n", gpgsv->sat[0].prn, gpgsv->sat[0].elevation, gpgsv->sat[0].azimuth, gpgsv->sat[0].snr);
-            //     printf("  #2:  %d %d %d %d\n", gpgsv->sat[1].prn, gpgsv->sat[1].elevation, gpgsv->sat[1].azimuth, gpgsv->sat[1].snr);
-            //     printf("  #3:  %d %d %d %d\n", gpgsv->sat[2].prn, gpgsv->sat[2].elevation, gpgsv->sat[2].azimuth, gpgsv->sat[2].snr);
-            //     printf("  #4:  %d %d %d %d\n", gpgsv->sat[3].prn, gpgsv->sat[3].elevation, gpgsv->sat[3].azimuth, gpgsv->sat[3].snr);
-            // }
-
-            // if (NMEA_GPTXT == data->type) {
-            //     nmea_gptxt_s *gptxt = (nmea_gptxt_s *) data;
-
-            //     printf("GPTXT Sentence:\n");
-            //     printf("  ID: %d %d %d\n", gptxt->id_00, gptxt->id_01, gptxt->id_02);
-            //     printf("  %s\n", gptxt->text);
-            // }
-
-            // if (NMEA_GPVTG == data->type) {
-            //     nmea_gpvtg_s *gpvtg = (nmea_gpvtg_s *) data;
-
-            //     printf("GPVTG Sentence:\n");
-            //     printf("  Track [deg]:   %.2lf\n", gpvtg->track_deg);
-            //     printf("  Speed [kmph]:  %.2lf\n", gpvtg->gndspd_kmph);
-            //     printf("  Speed [knots]: %.2lf\n", gpvtg->gndspd_knots);
-            // }
-
+            if (NMEA_GPGLL == data->type) {
+                // printf("GPGLL sentence\n");
+                nmea_gpgll_s *pos = (nmea_gpgll_s *) data;
+                if (pos->latitude.degrees != 0 && pos->latitude.minutes != 0 ) 
+                {
+                    xSemaphoreGive(locatedSemaphore);
+                        // Truy cập và cập nhật dữ liệu tọa độ
+                    coord->lat_degrees = pos->latitude.degrees;
+                    coord->lat_minutes = pos->latitude.minutes;
+                    coord->lat_cardinal = pos->latitude.cardinal;
+                    coord->lon_degrees = pos->longitude.degrees;
+                    coord->lon_minutes = pos->longitude.minutes;
+                    coord->lon_cardinal = pos->longitude.cardinal;
+                    printf("Task 1: Updated coordinates\n");
+                }  
+                else 
+                {
+                    printf("Can't locate\n");
+                }
+            }
+            if (NMEA_GPRMC == data->type) {
+                nmea_gprmc_s *pos = (nmea_gprmc_s *) data;
+                double adjusted_course = pos->track_deg;
+                if (NMEA_CARDINAL_DIR_EAST == pos->magvar_cardinal) {
+                    adjusted_course -= pos->magvar_deg;
+                } else if (NMEA_CARDINAL_DIR_WEST == pos->magvar_cardinal) {
+                    adjusted_course += pos->magvar_deg;
+                } else {
+                    printf("Invalid Magnetic Variation Direction!\n");
+                }
+            }
             nmea_free(data);
         }
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        vTaskDelay(200/portTICK_PERIOD_MS);
     }
 }
 void init_RAK3172_interface(void) {
@@ -229,6 +144,7 @@ void init_RAK3172_interface(void) {
 void init_LC76F_interface(void)
 {
     uart_config_t uart_config = {
+        // .baud_rate = 115200,
         .baud_rate = 9600,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
@@ -306,10 +222,11 @@ void setup_RAK_module(const char* logName)
     send_data_to_RAK(logName, "AT+DEVADDR=260BE8E0\n");
     send_data_to_RAK(logName, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
     send_data_to_RAK(logName, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
+
     // Device 2
-    // send_data_to_RAK(logName, "AT+DEVADDR=260BE8E0\n");
-    // send_data_to_RAK(logName, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
-    // send_data_to_RAK(logName, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
+    // send_data_to_RAK(logName, "AT+DEVADDR=260B37AA\n");
+    // send_data_to_RAK(logName, "AT+APPSKEY=0A47A418539390FDF8A5FD3A39FEECA8\n");
+    // send_data_to_RAK(logName, "AT+NWKSKEY=0697FFA8981B5B4D897070C77A7A523E\n");
     // send_data_to_RAK(logName, "AT+LPMLVL=2\n");
 }
 
@@ -343,15 +260,17 @@ static void recieve_data_from_RAK(void *arg)
 
 int Uplink_message(const char* logName) 
 {
-    if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(locatedSemaphore, portMAX_DELAY) == pdTRUE) {
+        printf("Chạy rồi nè");
         // Truy cập dữ liệu tọa độ
         printf("UPLINK TASK: Coordinates - lat: %d°%.4f', lon: %d°%.4f'\n",
         coord.lat_degrees, coord.lat_minutes,
         coord.lon_degrees, coord.lon_minutes);
         send_data_to_RAK(logName, "AT+SEND=2:AADDBBCC\n");
         vTaskDelay(100/portTICK_PERIOD_MS);
-        xSemaphoreGive(xMutex);
+        xSemaphoreGive(locatedSemaphore);
     }
+    printf("Bug đây chứ đâu");
     // payload_length = 0;
     // payload[payload_length++] = (uint8_t) lat;
     // payload[payload_length++] = (uint8_t) (lat >> 8);
@@ -366,6 +285,17 @@ int Uplink_message(const char* logName)
     
     vTaskDelay(1000/portTICK_PERIOD_MS);
     return true;
+}
+
+void init_semaphore(SemaphoreHandle_t *semaphore) 
+{
+    // Tạo semaphore
+    *semaphore = xSemaphoreCreateBinary();
+    
+    if (*semaphore == NULL) {
+        ESP_LOGE("Semaphore", "Semaphore creation failed!");
+        return;
+    }
 }
 
 void app_main(void)
@@ -384,8 +314,9 @@ void app_main(void)
     gpio_set_direction(EN_LC76F, GPIO_MODE_OUTPUT);
     gpio_set_level(EN_LC76F, 1);
     init_LC76F_interface();
-    initMutex();
-    xTaskCreate(read_and_parse_nmea, "GPS_TASK", 2048, NULL, 5, NULL);
+    init_semaphore(&startedGpsSemaphore);
+    init_semaphore(&locatedSemaphore);
+    xTaskCreate((TaskFunction_t)read_and_parse_nmea, "GPS_TASK", 2048, (void*) &coord, 5, NULL);
 
     // Enable RAK3172 module
     esp_rom_gpio_pad_select_gpio(EN_RAK);
@@ -396,9 +327,12 @@ void app_main(void)
 
     while (true) 
     {
-        Uplink_message("UPLINK TASK");
-        esp_deep_sleep_enable_gpio_wakeup(1ULL << BUTTON, 0);
-        ESP_LOGI("Deep Sleep", "Entering deep sleep");
-        esp_deep_sleep_start();
+        // if (xSemaphoreTake(locatedSemaphore, portMAX_DELAY) == pdTRUE) {
+            printf("Toang rồi nó chạy trước\n");
+            Uplink_message("UPLINK TASK");
+            esp_deep_sleep_enable_gpio_wakeup(1ULL << BUTTON, 0);
+            ESP_LOGI("Deep Sleep", "Entering deep sleep");
+            esp_deep_sleep_start();
+        // }
     }
 }

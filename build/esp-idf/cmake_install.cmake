@@ -407,3 +407,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/cmake_install.cmake")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/cmake_install.cmake")
+endif()
+

@@ -621,3 +621,10 @@ E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/l
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/install.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/install/local.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/install/strip.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/__idf_readLocation.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/edit_cache.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/rebuild_cache.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/list_install_components.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/install.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/install/local.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/readLocation/CMakeFiles/install/strip.dir
