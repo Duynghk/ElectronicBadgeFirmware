@@ -1,7 +1,7 @@
 {
     "version":            "1",
     "project_name":       "ElectronicBadgeFirmware",
-    "project_version":    "8c7f24d-dirty",
+    "project_version":    "c6fe1f4-dirty",
     "project_path":       "E:/ThayLoc/DoAn/ElectronicBadgeFirmware",
     "idf_path":           "C:/Users/TrinhLeHuy/esp/v5.1.3/esp-idf",
     "build_dir":          "E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build",

@@ -10,8 +10,10 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
+#include "esp_sleep.h"
 #include "nmea.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
@@ -33,6 +35,27 @@
 #define RAK_RXD 20
 #define EN_LC76F 1
 #define EN_RAK 4
+#define BUTTON 2
+
+typedef struct {
+    int lat_degrees;
+    float lat_minutes;
+    char lat_cardinal;
+    int lon_degrees;
+    float lon_minutes;
+    char lon_cardinal;
+} Coordinate;
+
+SemaphoreHandle_t xMutex;
+
+void initMutex() {
+    xMutex = xSemaphoreCreateMutex();
+    if (xMutex == NULL) {
+        printf("Mutex creation failed!\n");
+    }
+}
+
+Coordinate coord;
 
 //Create payload of LoRaWAN packet
 uint8_t payload[64] = {0};
@@ -47,10 +70,11 @@ static char *s_last_buf_end;
 static void read_and_parse_nmea();
 void LC76F_read_line(char **out_line_buf, size_t *out_line_len, int timeout_ms);
 static void recieve_data_from_RAK(void *arg);
+int send_data_to_RAK(const char* logName, const char* data);
 
 static void read_and_parse_nmea()
 {
-    printf("Example ready\n");
+    printf("Task GPS is ran\n");
     while (1) {
         char fmt_buf[32];
         nmea_s *data;
@@ -81,18 +105,34 @@ static void read_and_parse_nmea()
             // }
 
             if (NMEA_GPGLL == data->type) {
-                printf("GPGLL sentence\n");
                 nmea_gpgll_s *pos = (nmea_gpgll_s *) data;
-                printf("Longitude:\n");
-                printf("  Degrees: %d\n", pos->longitude.degrees);
-                printf("  Minutes: %f\n", pos->longitude.minutes);
-                printf("  Cardinal: %c\n", (char) pos->longitude.cardinal);
-                printf("Latitude:\n");
-                printf("  Degrees: %d\n", pos->latitude.degrees);
-                printf("  Minutes: %f\n", pos->latitude.minutes);
-                printf("  Cardinal: %c\n", (char) pos->latitude.cardinal);
-                strftime(fmt_buf, sizeof(fmt_buf), "%H:%M:%S", &pos->time);
-                printf("Time: %s\n", fmt_buf);
+                if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE) 
+                {
+                    if (pos->latitude.degrees != 0 && pos->latitude.minutes != 0 ) 
+                    {
+                        xSemaphoreGive(xMutex);
+                        // Truy cập và cập nhật dữ liệu tọa độ
+                        coord.lat_degrees = pos->latitude.degrees;
+                        coord.lat_minutes = pos->latitude.minutes;
+                        coord.lat_cardinal = pos->latitude.cardinal;
+                        coord.lon_degrees = pos->longitude.degrees;
+                        coord.lon_minutes = pos->longitude.minutes;
+                        coord.lon_cardinal = pos->longitude.cardinal;
+                        printf("Task 1: Updated coordinates\n");
+                    }  
+                }
+                // printf("GPGLL sentence\n");
+                
+                // printf("Longitude:\n");
+                // printf("  Degrees: %d\n", pos->longitude.degrees);
+                // printf("  Minutes: %f\n", pos->longitude.minutes);
+                // printf("  Cardinal: %c\n", (char) pos->longitude.cardinal);
+                // printf("Latitude:\n");
+                // printf("  Degrees: %d\n", pos->latitude.degrees);
+                // printf("  Minutes: %f\n", pos->latitude.minutes);
+                // printf("  Cardinal: %c\n", (char) pos->latitude.cardinal);
+                // strftime(fmt_buf, sizeof(fmt_buf), "%H:%M:%S", &pos->time);
+                // printf("Time: %s\n", fmt_buf);
             }
 
             // if (NMEA_GPRMC == data->type) {
@@ -254,6 +294,25 @@ void LC76F_read_line(char **out_line_buf, size_t *out_line_len, int timeout_ms)
     }
 }
 
+void setup_RAK_module(const char* logName) 
+{
+    send_data_to_RAK(logName, "AT+ATM\n");
+    send_data_to_RAK(logName, "AT+NWM=1\n");
+    send_data_to_RAK(logName, "AT+BAND=9\n");
+    send_data_to_RAK(logName, "AT+NJM=0\n");
+    send_data_to_RAK(logName, "AT+CLASS=A\n");
+
+    //Device 1
+    send_data_to_RAK(logName, "AT+DEVADDR=260BE8E0\n");
+    send_data_to_RAK(logName, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
+    send_data_to_RAK(logName, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
+    // Device 2
+    // send_data_to_RAK(logName, "AT+DEVADDR=260BE8E0\n");
+    // send_data_to_RAK(logName, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
+    // send_data_to_RAK(logName, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
+    // send_data_to_RAK(logName, "AT+LPMLVL=2\n");
+}
+
 int send_data_to_RAK(const char* logName, const char* data)
 {
     const int len = strlen(data);
@@ -269,7 +328,7 @@ static void recieve_data_from_RAK(void *arg)
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
     uint8_t* data = (uint8_t*) malloc(RAK_RX_BUF_SIZE+1);
     while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RAK_RX_BUF_SIZE, 1000 / portTICK_PERIOD_MS);
+        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RAK_RX_BUF_SIZE, 80 / portTICK_PERIOD_MS);
         if (rxBytes > 0) {
             data[rxBytes] = 0; // Null-terminate the string
             ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
@@ -277,13 +336,23 @@ static void recieve_data_from_RAK(void *arg)
             // No data received within the timeout period
             break; // Exit the loop if no data received
         }
+        // vTaskDelay(100/portTICK_PERIOD_MS);
     }
     free(data);  
 }
 
 int Uplink_message(const char* logName) 
 {
-    payload_length = 0;
+    if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE) {
+        // Truy cập dữ liệu tọa độ
+        printf("UPLINK TASK: Coordinates - lat: %d°%.4f', lon: %d°%.4f'\n",
+        coord.lat_degrees, coord.lat_minutes,
+        coord.lon_degrees, coord.lon_minutes);
+        send_data_to_RAK(logName, "AT+SEND=2:AADDBBCC\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+        xSemaphoreGive(xMutex);
+    }
+    // payload_length = 0;
     // payload[payload_length++] = (uint8_t) lat;
     // payload[payload_length++] = (uint8_t) (lat >> 8);
     // payload[payload_length++] = (uint8_t) (lat >> 16);
@@ -294,55 +363,42 @@ int Uplink_message(const char* logName)
     // payload[payload_length++] = (uint8_t) (lng >> 24);
     // payload[payload_length++] = (uint8_t)(voltage >> 8) & 0xff;
     // payload[payload_length++] = (uint8_t)voltage & 0xff;
-    send_data_to_RAK(logName, "AT+SEND=2:AADDBBCC\n");
+    
     vTaskDelay(1000/portTICK_PERIOD_MS);
     return true;
 }
 
 void app_main(void)
 {
-    static const char *TX_TASK_TAG = "RAK_TX_TASK";
-    // Enable RAK3172 module
-    // esp_rom_gpio_pad_select_gpio(EN_RAK);
-    // gpio_set_direction(EN_RAK, GPIO_MODE_OUTPUT);
-    // gpio_set_level(EN_RAK, 1);
-    // init_RAK3172_interface();
-    // send_data_to_RAK(TX_TASK_TAG, "AT+ATM\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+NWM=1\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+BAND=9\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+NJM=0\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+CLASS=A\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+DEVADDR=260BE8E0\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
-    // send_data_to_RAK(TX_TASK_TAG, "AT+LPMLVL=2\n");
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << BUTTON),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_NEGEDGE,
+    };
+    gpio_config(&io_conf);
 
     // Enable LC76F module
     esp_rom_gpio_pad_select_gpio(EN_LC76F);
     gpio_set_direction(EN_LC76F, GPIO_MODE_OUTPUT);
     gpio_set_level(EN_LC76F, 1);
     init_LC76F_interface();
+    initMutex();
+    xTaskCreate(read_and_parse_nmea, "GPS_TASK", 2048, NULL, 5, NULL);
 
-    char *line_buf = NULL;
-    size_t line_len = 0;
-    int timeout = 10000; // thời gian chờ là 1000 ms (1 giây)
-    printf("\nHello. I am running\n");
+    // Enable RAK3172 module
+    esp_rom_gpio_pad_select_gpio(EN_RAK);
+    gpio_set_direction(EN_RAK, GPIO_MODE_OUTPUT);
+    gpio_set_level(EN_RAK, 1);
+    init_RAK3172_interface();
+    setup_RAK_module("SET UP RAK");
+
     while (true) 
     {
-        // Uplink_message(TX_TASK_TAG);
-        // vTaskDelay(10000/portTICK_PERIOD_MS);
-        // Gọi hàm
-        read_and_parse_nmea();
-        LC76F_read_line(&line_buf, &line_len, timeout);
-
-        // Kiểm tra và sử dụng dữ liệu trả về (nếu cần)
-        if (line_buf != NULL) {
-            printf("Read line: %s\n", line_buf);
-            printf("Line length: %zu\n", line_len);
-        } else {
-            printf("No line read within the timeout period.\n");
-        }
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-
+        Uplink_message("UPLINK TASK");
+        esp_deep_sleep_enable_gpio_wakeup(1ULL << BUTTON, 0);
+        ESP_LOGI("Deep Sleep", "Entering deep sleep");
+        esp_deep_sleep_start();
     }
 }
