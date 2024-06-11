@@ -40,7 +40,8 @@ uint8_t payload[64] = {0};
 uint8_t payload_length;
 
 uint32_t lat = 0;
-uint32_t lng = 0;
+uint32_t lon = 0;
+uint16_t voltage = 0;
 
 
 static void recieve_data_from_RAK(void *arg);
@@ -71,9 +72,9 @@ void setup_RAK_module(const char* logName)
     send_data_to_RAK(logName, "AT+CLASS=A\n");
 
     //Device 1
-    send_data_to_RAK(logName, "AT+DEVADDR=260BE8E0\n");
-    send_data_to_RAK(logName, "AT+APPSKEY=1B7AAB91AD987CA6AF11081861FA5E49\n");
-    send_data_to_RAK(logName, "AT+NWKSKEY=11BB2F2767E027329F874AED5C28D7E4\n");
+    send_data_to_RAK(logName, "AT+DEVADDR=260B5782\n");
+    send_data_to_RAK(logName, "AT+APPSKEY=C331A4DE9D877AD3B17794914958C63B\n");
+    send_data_to_RAK(logName, "AT+NWKSKEY=7EDEC499C79A1BA56056D6D19111AF64\n");
 
     // Device 2
     // send_data_to_RAK(logName, "AT+DEVADDR=260B37AA\n");
@@ -113,28 +114,35 @@ static void recieve_data_from_RAK(void *arg)
 int Uplink_message(const char* logName) 
 {
     if (xSemaphoreTake(locatedSemaphore, portMAX_DELAY) == pdTRUE) {
-        printf("Chạy rồi nè");
-        // Truy cập dữ liệu tọa độ
-        printf("UPLINK TASK: Coordinates - lat: %d°%.4f', lon: %d°%.4f'\n",
+        printf("UPLINK TASK: Coordinates - lat: %d°%f', lon: %d°%f'\n",
         coord.lat_degrees, coord.lat_minutes,
         coord.lon_degrees, coord.lon_minutes);
-        send_data_to_RAK(logName, "AT+SEND=2:AADDBBCC\n");
+        lat = (uint32_t)((coord.lat_degrees + coord.lat_minutes/60) * 1.0e6);
+        lon = (uint32_t)((coord.lon_degrees + coord.lon_minutes/60) * 1.0e6);
+        payload_length = 0;
+        payload[payload_length++] = (uint8_t) lat;
+        payload[payload_length++] = (uint8_t) (lat >> 8);
+        payload[payload_length++] = (uint8_t) (lat >> 16);
+        payload[payload_length++] = (uint8_t) (lat >> 24);
+        payload[payload_length++] = (uint8_t) lon;
+        payload[payload_length++] = (uint8_t) (lon >> 8);
+        payload[payload_length++] = (uint8_t) (lon >> 16);
+        payload[payload_length++] = (uint8_t) (lon >> 24);
+        payload[payload_length++] = (uint8_t)(voltage >> 8) & 0xff;
+        payload[payload_length++] = (uint8_t)voltage & 0xff;
+        char hexStr[3];
+        send_data_to_RAK(logName, "AT+SEND=2:");
+        for(int i = 0; i < payload_length; i++){
+            sprintf(hexStr, "%02X", payload[i]);
+            send_data_to_RAK(logName, hexStr);
+        }
+        send_data_to_RAK(logName, "\n");
+        // send_data_to_RAK(logName, "AT+SEND=2:AADDBBCC\n");
         notify(NOTIFY_FREQUENCY2,200);
         vTaskDelay(100/portTICK_PERIOD_MS);
         xSemaphoreGive(locatedSemaphore);
     }
-    printf("Bug đây chứ đâu");
-    // payload_length = 0;
-    // payload[payload_length++] = (uint8_t) lat;
-    // payload[payload_length++] = (uint8_t) (lat >> 8);
-    // payload[payload_length++] = (uint8_t) (lat >> 16);
-    // payload[payload_length++] = (uint8_t) (lat >> 24);
-    // payload[payload_length++] = (uint8_t) lng;
-    // payload[payload_length++] = (uint8_t) (lng >> 8);
-    // payload[payload_length++] = (uint8_t) (lng >> 16);
-    // payload[payload_length++] = (uint8_t) (lng >> 24);
-    // payload[payload_length++] = (uint8_t)(voltage >> 8) & 0xff;
-    // payload[payload_length++] = (uint8_t)voltage & 0xff;
+
     
     vTaskDelay(1000/portTICK_PERIOD_MS);
     return true;
@@ -186,7 +194,6 @@ void app_main(void)
     while (true) 
     {
         // if (xSemaphoreTake(locatedSemaphore, portMAX_DELAY) == pdTRUE) {
-            printf("Toang rồi nó chạy trước\n");
             Uplink_message("UPLINK TASK");
             esp_deep_sleep_enable_gpio_wakeup(1ULL << BUTTON, 0);
             ESP_LOGI("Deep Sleep", "Entering deep sleep");
