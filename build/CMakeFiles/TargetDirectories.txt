@@ -614,6 +614,13 @@ E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/main/CMakeFiles/list_insta
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/main/CMakeFiles/install.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/main/CMakeFiles/install/local.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/main/CMakeFiles/install/strip.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/__idf_buzzer.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/edit_cache.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/rebuild_cache.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/list_install_components.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/install.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/install/local.dir
+E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/buzzer/CMakeFiles/install/strip.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/__idf_libnmea-esp32.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/edit_cache.dir
 E:/ThayLoc/DoAn/ElectronicBadgeFirmware/build/esp-idf/libnmea-esp32/CMakeFiles/rebuild_cache.dir

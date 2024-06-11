@@ -23,6 +23,6 @@
         "gpgsa.h": "c",
         "gpgga.h": "c"
     },
-    "idf.portWin": "COM20",
+    "idf.portWin": "COM19",
     "idf.flashType": "UART"
 }
